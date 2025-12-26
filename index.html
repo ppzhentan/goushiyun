@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Goushi.yun - 祝你今天走狗屎运</title>
+    <!-- 引入 Tailwind CSS 进行快速样式开发 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: ZCOOL KuaiLe (快乐体) 非常适合这种趣味网站 -->
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'ZCOOL KuaiLe', cursive; /* 使用快乐体 */
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            overflow-x: hidden;
+            /* 防止移动端点击高亮背景 */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 漂浮动画 */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* 按钮点击特效 */
+        .btn-press:active {
+            transform: scale(0.95);
+        }
+
+        /* 狗屎运掉落动画 */
+        .emoji-drop {
+            position: fixed;
+            top: -50px;
+            font-size: 24px;
+            animation: drop 3s linear forwards;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        @keyframes drop {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .lucky-card {
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            /* 确保隐藏时完全不可见且不占位，但为了动画效果保留 display block */
+            transform-origin: top center;
+        }
+        
+        .lucky-card.show {
+            transform: scale(1);
+            opacity: 1;
+            max-height: 1000px; /* 足够大即可 */
+            margin-top: 2rem;
+            padding: 2rem;
+        }
+        
+        .lucky-card.hide {
+            transform: scale(0.8);
+            opacity: 0;
+            max-height: 0;
+            margin-top: 0;
+            padding: 0 2rem; /* 保持横向 padding 防止宽度抖动 */
+            border-width: 0;
+        }
+
+        /* 背景云朵装饰 */
+        .bg-cloud {
+            position: absolute;
+            opacity: 0.6;
+            z-index: -1;
+            animation: float 6s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center text-gray-800 relative select-none">
+
+    <!-- 背景装饰云 - 移动端减小尺寸 -->
+    <div class="bg-cloud text-blue-100 top-5 left-5 text-7xl md:text-9xl">☁️</div>
+    <div class="bg-cloud text-blue-50 bottom-24 right-5 text-7xl md:text-9xl" style="animation-delay: 2s">☁️</div>
+    <div class="bg-cloud text-blue-50 top-1/2 left-2 text-5xl md:text-6xl" style="animation-delay: 1s">☁️</div>
+
+    <!-- 主要内容容器 -->
+    <main class="container mx-auto px-4 text-center max-w-lg z-10 flex flex-col justify-center min-h-[80vh] pb-20">
+        
+        <!-- Logo / 标题区 -->
+        <div class="mb-6 md:mb-8 animate-[float_4s_ease-in-out_infinite]">
+            <div class="text-7xl md:text-8xl mb-2 drop-shadow-xl inline-block">🐕💩☁️</div>
+            <h1 class="text-5xl md:text-7xl text-amber-500 drop-shadow-sm mt-2 md:mt-4">狗屎运</h1>
+            <p class="text-lg md:text-2xl text-gray-500 mt-2 tracking-widest uppercase">Goushi.yun</p>
+        </div>
+
+        <!-- Slogan -->
+        <div class="bg-white/80 backdrop-blur-sm p-5 md:p-6 rounded-3xl shadow-xl border-4 border-amber-200 mb-6 md:mb-8 mx-2">
+            <p class="text-xl md:text-2xl text-gray-700 leading-relaxed">
+                <span class="text-amber-600">"运气"</span> 也是实力的一种。<br>
+                今天，你可能会踩到什么好运呢？
+            </p>
+        </div>
+
+        <!-- 交互按钮 - 优化触摸区域 -->
+        <button id="drawBtn" class="btn-press bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white text-2xl md:text-3xl py-4 px-8 md:px-12 rounded-full shadow-lg transform transition-all active:scale-95 border-b-8 border-orange-700 active:border-b-0 active:translate-y-2 w-full md:w-auto touch-manipulation">
+            ✨ 抽取今日狗屎运 ✨
+        </button>
+
+        <!-- 运势结果展示卡片 (初始隐藏) -->
+        <div id="resultCard" class="lucky-card hide bg-yellow-50 border-yellow-400 rounded-2xl shadow-2xl relative overflow-hidden w-full mx-auto">
+            <!-- 装饰带 -->
+            <div class="absolute top-0 right-0 bg-red-500 text-white text-xs px-2 py-1 transform translate-x-1/2 -translate-y-1/2 rotate-45 w-24 text-center mt-6 mr-6">大吉</div>
+            
+            <div class="text-5xl md:text-6xl mb-3 md:mb-4" id="luckyIcon">🎉</div>
+            <h2 class="text-2xl md:text-3xl text-orange-600 mb-2 font-bold" id="luckyTitle">运势加载中...</h2>
+            <p class="text-lg md:text-xl text-gray-600 px-2" id="luckyDesc">...</p>
+            
+            <div class="mt-4 md:mt-6 pt-4 border-t border-yellow-200 text-sm text-gray-400">
+                Goushi.yun 认证 · 仅供娱乐
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="fixed bottom-0 w-full text-center text-gray-400 text-xs md:text-sm py-3 bg-white/50 backdrop-blur-md safe-area-pb">
+        <p>&copy; <span id="year"></span> Goushi.yun | 愿你好运连连</p>
+    </footer>
+
+    <script>
+        // 设置年份
+        document.getElementById('year').innerText = new Date().getFullYear();
+
+        // 运势数据库
+        const fortunes = [
+            { icon: "💰", title: "横财就手", desc: "出门可能会捡到钱，或者哪怕是捡到一块钱也是钱！" },
+            { icon: "🐛", title: "代码无Bug", desc: "写的代码一次跑通，没有任何报错，神清气爽！" },
+            { icon: "🍔", title: "狂吃不胖", desc: "今天的代谢率爆表，想吃什么就吃什么！" },
+            { icon: "❤️", title: "桃花朵朵", desc: "可能会在转角遇到爱，或者被喜欢的人多看一眼。" },
+            { icon: "🚗", title: "一路绿灯", desc: "不管是开车还是人生，今天都畅通无阻。" },
+            { icon: "🥤", title: "再来一瓶", desc: "买饮料可能会中奖，小确幸也是大运气。" },
+            { icon: "📦", title: "快递提前到", desc: "期待已久的包裹今天就会送到你手上！" },
+            { icon: "🛌", title: "自然醒", desc: "能睡个好觉就是最大的狗屎运，今天精神百倍。" },
+            { icon: "💼", title: "老板不在", desc: "老板今天出差或请假，摸鱼一整天没人管！" },
+            { icon: "🎮", title: "带飞全场", desc: "玩游戏把把MVP，队友都夸你666。" },
+            { icon: "🌂", title: "完美避雨", desc: "刚进屋就下雨，刚出门雨就停，老天爷都帮你。" },
+            { icon: "🧋", title: "奶茶有人请", desc: "今天可能会有人突然请你喝奶茶，美滋滋。" }
+        ];
+
+        const btn = document.getElementById('drawBtn');
+        const card = document.getElementById('resultCard');
+        const luckyIcon = document.getElementById('luckyIcon');
+        const luckyTitle = document.getElementById('luckyTitle');
+        const luckyDesc = document.getElementById('luckyDesc');
+
+        // 生成掉落的 Emoji
+        function createConfetti() {
+            const emojis = ['💩', '💰', '🍀', '✨', '🐶', '🧧'];
+            const container = document.body;
+            const width = window.innerWidth;
+            
+            for (let i = 0; i < 20; i++) {
+                const el = document.createElement('div');
+                el.classList.add('emoji-drop');
+                el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                // 限制掉落范围，防止手机上出现横向滚动条
+                el.style.left = Math.random() * 90 + 'vw'; 
+                el.style.animationDuration = (Math.random() * 2 + 1) + 's'; // 1-3s
+                el.style.fontSize = (Math.random() * 20 + 20) + 'px';
+                
+                container.appendChild(el);
+
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    el.remove();
+                }, 3000);
+            }
+        }
+
+        btn.addEventListener('click', () => {
+            // 触觉反馈 (如果设备支持)
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+
+            // 1. 播放特效
+            createConfetti();
+
+            // 2. 隐藏卡片 (如果是第二次点击)
+            card.classList.remove('show');
+            card.classList.add('hide');
+            // 移除边框以彻底隐藏
+            card.classList.remove('border-4'); 
+
+            // 3. 随机抽取
+            const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+
+            // 4. 短暂延迟后显示新结果
+            setTimeout(() => {
+                luckyIcon.innerText = randomFortune.icon;
+                luckyTitle.innerText = randomFortune.title;
+                luckyDesc.innerText = randomFortune.desc;
+                
+                card.classList.remove('hide');
+                card.classList.add('show');
+                card.classList.add('border-4'); // 恢复边框
+                
+                // 自动滚动到结果 (提升小屏体验)
+                if(window.innerHeight < 800) {
+                    card.scrollIntoView({behavior: "smooth", block: "nearest"});
+                }
+            }, 300);
+        });
+    </script>
+</body>
+</html>
